@@ -1,0 +1,20 @@
+---
+- name: CI/CD Pipeline for urless-master
+  hosts: deployment
+  tasks:
+    - name: Clone latest code from GitHub
+      git:
+        repo: "https://github.com/Mohdsaleh939/urless-master.git"
+        dest: "/home/ubuntu/urless-master"
+        version: master
+        force: yes
+
+    - name: Build and start Docker containers using docker-compose
+      command: docker-compose up -d
+      args:
+        chdir: "/home/ubuntu/urless-master"
+
+    - name: Run unit tests
+      import_role:
+        name: test
+
