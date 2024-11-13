@@ -1,20 +1,46 @@
 ---
 - name: CI/CD Pipeline for urless-master
   hosts: deployment
+  become: true
+  vars:
+    rollback_versions: 4
+    deployment_dir: "/home/ubuntu/urless-master"
+    backups_dir: "/home/ubuntu/backups"
+
   tasks:
+    - name: Ensure backups directory exists
+      file:
+        path: "{{ backups_dir }}"
+        state: directory
+
     - name: Clone latest code from GitHub
       git:
         repo: "https://github.com/Mohdsaleh939/urless-master.git"
-        dest: "/home/ubuntu/urless-master"
+        dest: "{{ deployment_dir }}"
         version: master
         force: yes
+      register: deploy_result
+
+    - name: Backup current deployment
+      command: cp -r "{{ deployment_dir }}" "{{ backups_dir }}/urless_$(date +%F-%H-%M)"
+      when: deploy_result.changed
+
+    - name: Prune old backups
+      shell: "ls -dt {{ backups_dir }}/urless_* | tail -n +{{ rollback_versions + 1 }} | xargs rm -rf"
+      ignore_errors: true
 
     - name: Build and start Docker containers using docker-compose
       command: docker-compose up -d
       args:
-        chdir: "/home/ubuntu/urless-master"
+        chdir: "{{ deployment_dir }}"
+      when: deploy_result.changed
 
     - name: Run unit tests
       import_role:
         name: test
+      when: deploy_result.changed
+
+    - name: Rollback if tests fail
+      command: cp -r "{{ backups_dir }}/urless_$(date -d 'now - 5 minutes' +%F-%H-%M)" "{{ deployment_dir }}"
+      when: deploy_result.changed and test_result.failed
 
