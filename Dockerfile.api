@@ -18,6 +18,6 @@ RUN pip install pytest  # Install pytest for running tests
 # Expose port 8080 for the application
 EXPOSE 8080
 
-## Start the application
+# Start the application
 ENTRYPOINT ["python", "main.py"]
 
