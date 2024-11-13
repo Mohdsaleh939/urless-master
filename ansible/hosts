@@ -1,0 +1,3 @@
+[deployment]
+localhost ansible_connection=local
+

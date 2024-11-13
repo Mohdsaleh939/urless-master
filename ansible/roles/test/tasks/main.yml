@@ -1,0 +1,6 @@
+---
+- name: Run unit tests
+  command: pytest "{{ deployment_dir }}/api"
+  register: test_result
+  failed_when: "'failed' in test_result.stdout"
+
