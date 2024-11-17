@@ -1,0 +1,9 @@
+---
+- name: Create a backup of current deployment
+  command: tar czf "/home/ubuntu/backups/urless_{{ ansible_date_time.date }}.tar.gz" -C "{{ deployment_path }}" .
+  register: backup_result
+  ignore_errors: yes
+
+- name: Remove oldest backup if exceeding rollback limit
+  shell: "ls -1t /home/ubuntu/backups/urless_*.tar.gz | tail -n +{{ rollback_limit + 1 }} | xargs rm -f"
+  when: backup_result is succeeded

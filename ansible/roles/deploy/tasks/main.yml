@@ -1,0 +1,12 @@
+---
+- name: Clone latest code from GitHub
+  git:
+    repo: "{{ repo_url }}"
+    dest: "{{ deployment_path }}"
+    version: main
+    force: yes
+
+- name: Build and start Docker containers
+  command: docker-compose -f "{{ deployment_path }}/docker-compose.yaml" up -d
+  args:
+    chdir: "{{ deployment_path }}"

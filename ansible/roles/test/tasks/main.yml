@@ -1,6 +1,10 @@
 ---
-- name: Run unit tests
-  command: pytest "{{ deployment_dir }}/api"
+- name: Run unit tests in backend container
+  command: docker exec urless-backend pytest /api/test_main.py
   register: test_result
-  failed_when: "'failed' in test_result.stdout"
+  ignore_errors: yes
 
+- name: Fail if tests did not pass
+  fail:
+    msg: "Unit tests failed"
+  when: test_result.rc != 0
