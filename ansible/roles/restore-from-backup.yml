@@ -1,0 +1,44 @@
+---
+- name: Restore from the latest backup
+  hosts: deployment
+  vars:
+    backup_dir: "/home/ubuntu/backups"
+    deployment_path: "/home/ubuntu/urless-master"
+    redis_dump_path: "/var/lib/redis/dump.rdb"
+
+  tasks:
+    - name: Find the latest backup file
+      shell: "ls -1t {{ backup_dir }}/urless_*.tar.gz | head -n 1"
+      register: latest_backup
+      changed_when: false
+
+    - name: Fail if no backup is found
+      fail:
+        msg: "No backups found in {{ backup_dir }}."
+      when: latest_backup.stdout == ""
+
+    - name: Extract the latest backup
+      command: tar xzf {{ latest_backup.stdout }} -C {{ deployment_path }}
+      args:
+        creates: "{{ deployment_path }}/restored"
+      register: restore_result
+
+    - name: Log successful restoration
+      debug:
+        msg: "Restored from backup {{ latest_backup.stdout }}."
+
+    - name: Restore Redis state from the backup
+      copy:
+        src: "{{ deployment_path }}/dump.rdb"
+        dest: "{{ redis_dump_path }}"
+      when: restore_result is succeeded
+
+    - name: Restart Redis service
+      service:
+        name: redis-server
+        state: restarted
+
+    - name: Notify restoration completion
+      debug:
+        msg: "Application and Redis state have been successfully restored."
+

@@ -45,7 +45,7 @@ services:
       context: ./
       dockerfile: Dockerfile.nginx
     ports:
-      - 80:80
+      - 8085:80
     environment:
       NGINX_BACKEND_HOST: wordpress
       NGINX_BACKEND_PORT: 8081
